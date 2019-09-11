@@ -14,6 +14,10 @@ VERSION = '0.0.1'
 
 class wikiWin(WikiTable):
     def __init__(self, RUN = True):
+        self.Delchar = '\t'
+        self.Headers = 0
+	self.fileName = None
+	self.csvdata =[]
         self.appMain(RUN)
         
     #Creation of init_window
@@ -28,7 +32,7 @@ class wikiWin(WikiTable):
         print ('About...')
         
     def OpenFile(self):
-        print ("Open FLLog File!")
+        print ("Open CSV File!")
         fileName = askopenfilename(title = "Select Input File:",
                                       filetypes=[("LOG files","*.log"),
                                                  ("CSV files","*.csv"),
@@ -36,9 +40,10 @@ class wikiWin(WikiTable):
                                                  ("All Files","*.*")])
         if os.path.isfile(fileName):
             print('File name selected: %s'%(fileName))
-            self.wikistuff.fileName = fileName
+            self.fileName = fileName
             self.csvdata = self.readinputfile(fileName, self.Delchar)
-            self.fillLogTextfromData(self.csvdata, self.LogText)
+	    print ('csvdata:\n%s'%(self.csvdata))
+            self.fillLogTextfromData(self.csvdata, self.LogText, True)
             self.filemenu.entryconfigure("Convert to Wiki...", state="normal")
             #self.filemenu.entryconfigure("Convert to Wiki Table...", state="normal")
             #print('Raw logDate: %s'%(self.wikistuff.logData))
@@ -46,9 +51,11 @@ class wikiWin(WikiTable):
     
     def SaveWiki(self):
         print ('Convert to Wiki format...')
-        temp = self.wikistuff.convert_to_wiki(self.wikistuff.logData)
-        wikiText = self.wikistuff.make_wiki_entry( \
-                        temp, whichnet = None)
+        temp = self.convert_to_wiki_table(self.csvdata, self.Headers)
+	wikiText = temp.splitlines()
+	print('wikiTable:\n%s'%(wikiText))
+        #wikiText = self.wikistuff.make_wiki_entry( \
+        #                temp, whichnet = None)
         self.fillLogTextfromData(wikiText, self.LogText, clearWin=True)
 
     def SaveWikiTable(self):
@@ -91,12 +98,16 @@ class wikiWin(WikiTable):
                    'Defaulting to TAB character'%(tabs))
   
     def head_options(self):
-        headers = self.Headers.get()
-        print('Headers: %s\n'%(headers))
+        self.Headers = self.Headers.get()
+        print('Headers: %s\n'%(self.Headers))
   
   
     def init_window(self):
         self.root = Tk()
+
+        self.Tabs = IntVar()
+        self.Headers = IntVar()
+
         self.S = Scrollbar(self.root)
         self.LogText = Text(self.root, height=10, width=120)
         self.S.pack(side=RIGHT, fill=Y)
@@ -112,14 +123,13 @@ class wikiWin(WikiTable):
         self.filemenu.add_command(label="Open Input File", command=self.OpenFile)
         self.filemenu.add_separator()
         self.filemenu.add_command(label="Convert to Wiki...", command=self.SaveWiki, state="disabled")
-        self.filemenu.add_command(label="Convert to Wiki Table...", command=self.SaveWikiTable, state="disabled")
+        #self.filemenu.add_command(label="Convert to Wiki Table...", command=self.SaveWikiTable, state="disabled")
         self.filemenu.add_command(label="Exit", command=self.root.quit)
     
         helpmenu = Menu(menu)
         menu.add_cascade(label="Help", menu=helpmenu)
         helpmenu.add_command(label="About...", command=self.About)
         
-        self.Tabs = IntVar()
         self.optionsmenu = Menu(menu)
         menu.add_cascade(label='Options', menu=self.optionsmenu)
         self.optionsmenu.add_radiobutton(label = 'Tabs as Field Delimiters',
@@ -132,7 +142,6 @@ class wikiWin(WikiTable):
                                           command = self.del_options)
         self.optionsmenu.add_separator()
         
-        self.Headers = IntVar()
         self.optionsmenu.add_checkbutton(\
                                   label='Column Headers',
                                   onvalue=1, 
