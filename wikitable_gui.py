@@ -1,12 +1,20 @@
 #!/usr/bin/env python
-try:
+import sys
+version_major = sys.version_info[0]
+print ('version_major = %s'%(version_major))
+if (version_major == '2'):
     from Tkinter import *
-except ImportError:
+    from tkMessageBox import *
+    from tkFileDialog   import askopenfilename
+    #from tkFileDialog   import askdirectory
+    #from tkFileDialog   import asksaveasfilename
+else:
     from tkinter import *
-from tkMessageBox import *
-from tkFileDialog   import askopenfilename
-from tkFileDialog   import askdirectory
-from tkFileDialog   import asksaveasfilename
+    from tkinter.messagebox import showinfo
+    from tkinter.filedialog import askopenfilename
+    #from tkinter.filedialog import askdirectory
+    #from tkinter.filedialog import asksaveasfilename
+    
 from pywikitable import WikiTable
 import os.path
 
@@ -16,8 +24,8 @@ class wikiWin(WikiTable):
     def __init__(self, RUN = True):
         self.Delchar = '\t'
         self.Headers = 0
-	self.fileName = None
-	self.csvdata =[]
+        self.fileName = None
+        self.csvdata =[]
         self.appMain(RUN)
         
     #Creation of init_window
@@ -30,7 +38,13 @@ class wikiWin(WikiTable):
         
     def About(self):
         print ('About...')
-        
+        pythonversion = sys.version.splitlines()
+        infotext = \
+        'WIKITABLE_GUI - Version ' + VERSION + '\n' + \
+        'Utilities to convert CSV files to Wiki TABLE format.\n' \
+        + 'Python ' + pythonversion[0]
+        showinfo('WIKITABLE_GUI', infotext)
+       
     def OpenFile(self):
         print ("Open CSV File!")
         fileName = askopenfilename(title = "Select Input File:",
@@ -42,7 +56,7 @@ class wikiWin(WikiTable):
             print('File name selected: %s'%(fileName))
             self.fileName = fileName
             self.csvdata = self.readinputfile(fileName, self.Delchar)
-	    print ('csvdata:\n%s'%(self.csvdata))
+            print ('csvdata:\n%s'%(self.csvdata))
             self.fillLogTextfromData(self.csvdata, self.LogText, True)
             self.filemenu.entryconfigure("Convert to Wiki...", state="normal")
             #self.filemenu.entryconfigure("Convert to Wiki Table...", state="normal")
@@ -52,8 +66,8 @@ class wikiWin(WikiTable):
     def SaveWiki(self):
         print ('Convert to Wiki format...')
         temp = self.convert_to_wiki_table(self.csvdata, self.Headers)
-	wikiText = temp.splitlines()
-	print('wikiTable:\n%s'%(wikiText))
+        wikiText = temp.splitlines()
+        print('wikiTable:\n%s'%(wikiText))
         #wikiText = self.wikistuff.make_wiki_entry( \
         #                temp, whichnet = None)
         self.fillLogTextfromData(wikiText, self.LogText, clearWin=True)
