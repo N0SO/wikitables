@@ -31,13 +31,13 @@ class WikiTable():
         pass
 
     def __version__(self):
-        return "2.0.0-beta"
+        return "2.0.0"
 
     def readinputfile(self, file_name = None, DeLim='\t'):
         if (file_name == None):
             csv_file = stdin
         else:
-            csv_file = open(file_name, "r")
+            csv_file = open(file_name, "rb")
         csv_reader = csv.reader(csv_file, delimiter=DeLim)
         csv_text = []
         for line in csv_reader:

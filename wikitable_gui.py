@@ -1,28 +1,29 @@
 #!/usr/bin/env python
+"""
+wikitable_gui - GUI front end for pywikitables.py. 
+            
+Update History:
+* Thu Sep 12 2019 Mike Heitmann, N0SO <n0so@arrl.net>
+- V1.0.0 - Initial release
+"""
 import sys
-version_major = sys.version_info[0]
-if (version_major == 2):
+python_version = sys.version_info[0]
+if (python_version == 2):
     from Tkinter import *
     from tkMessageBox import *
     from tkFileDialog   import askopenfilename
-    #from tkFileDialog   import askdirectory
-    #from tkFileDialog   import asksaveasfilename
 else:
     from tkinter import *
     from tkinter.messagebox import showinfo
     from tkinter.filedialog import askopenfilename
-    #from tkinter.filedialog import askdirectory
-    #from tkinter.filedialog import asksaveasfilename
     
 from pywikitable import WikiTable
 import os.path
 
-VERSION = '0.0.1'
+VERSION = '1.0.0'
 
 class wikiWin(WikiTable):
     def __init__(self, RUN = True):
-        self.Delchar = '\t'
-        self.Headers = 0
         self.fileName = None
         self.csvdata =[]
         self.appMain(RUN)
@@ -45,60 +46,63 @@ class wikiWin(WikiTable):
         showinfo('WIKITABLE_GUI', infotext)
        
     def OpenFile(self):
-        print ("Open CSV File!")
+        if (self.Tabs.get() == 1):
+            FILETYPES = [("CSV files","*.csv"),
+                         ("Text files","*.txt")]
+            debugtext = 'Open COMMA delimited CSV file...'
+        else:
+            FILETYPES = [("Text files","*.txt"),
+                         ("CSV files","*.csv")]
+            debugtext = 'Open TAB delimited CSV file...'
+        FILETYPES.append( ("LOG files","*.log") ) 
+        FILETYPES.append( ("All Files","*.*") )
+        
+        print (debugtext)
         fileName = askopenfilename(title = "Select Input File:",
-                                      filetypes=[("LOG files","*.log"),
-                                                 ("CSV files","*.csv"),
-                                                 ("Text files","*.txt"),
-                                                 ("All Files","*.*")])
+                                      filetypes=FILETYPES)
         if os.path.isfile(fileName):
             print('File name selected: %s'%(fileName))
             self.fileName = fileName
-            self.csvdata = self.readinputfile(fileName, self.Delchar)
-            print ('csvdata:\n%s'%(self.csvdata))
-            self.fillLogTextfromData(self.csvdata, self.LogText, True)
-            self.filemenu.entryconfigure("Convert to Wiki...", state="normal")
-            #self.filemenu.entryconfigure("Convert to Wiki Table...", state="normal")
-            #print('Raw logDate: %s'%(self.wikistuff.logData))
-        
+            self.csvdata = self.readinputfile(fileName, 
+                                              self.Delchar)
+
+            #Convert csvdata for display in TextBox                                  
+            textboxdata = []                                  
+            for line in self.csvdata:
+                item1 = True
+                item =''
+                for litem in line:
+                    if (item1):
+                        item1 = False
+                        item += litem
+                    else:
+                        item += ',' + litem
+                textboxdata.append(item + '\n')
+            #print ('csvdata:\n%s'%(self.csvdata))
+            self.fillLogTextfromData(textboxdata, self.LogText, 
+                                                   clearWin=True)
+            self.filemenu.entryconfigure("Convert to Wiki...", 
+                                                  state="normal")
+        else:
+            print('File open CANCEL.')
     
     def SaveWiki(self):
         print ('Convert to Wiki format...')
-        temp = self.convert_to_wiki_table(self.csvdata, self.Headers)
+        temp = self.convert_to_wiki_table(self.csvdata, self.headerflag)
         wikiText = temp.splitlines()
-        print('wikiTable:\n%s'%(wikiText))
-        #wikiText = self.wikistuff.make_wiki_entry( \
-        #                temp, whichnet = None)
-        self.fillLogTextfromData(wikiText, self.LogText, clearWin=True)
-
-    def SaveWikiTable(self):
-        print ('Convert to Wiki Table format...')
-        temp = self.wikistuff.convert_to_wiki_table(self.wikistuff.logData)
-        #print('===>WikiText:\n%s'%(temp))
-        wikiText = self.wikistuff.make_wiki_entry( \
-                                temp, whichnet = None)
-
-        self.fillLogTextfromData(wikiText, self.LogText, clearWin=True)
+        #print('wikiText:\n%s'%(wikiText))
+        textboxdata = []
+        for line in wikiText:
+            textboxdata.append(line + '\n')
+        self.fillLogTextfromData(textboxdata, self.LogText, clearWin=True)
 
     def fillLogTextfromData(self, Data, textWindow, clearWin = False):
         if (clearWin):
             textWindow.delete(1.0, END)
-        for item in Data:
-            for line in item:
-                textWindow.insert(END, line)
-            textWindow.insert(END,'\n')
+        for line in Data:
+            #print ('+++>line:\n%s'%(line))
+            textWindow.insert(END, line)
 
-    def fillLogTextfromFile(self, filename, textWindow, clearWin = False):
-        if (clearWin):
-            textWindow.delete(1.0, END)
-        try: 
-           with open(filename,'r') as f:
-              retText = f.readlines()
-           self.fillLogTextfromData(retText, textWindow, clearWin)
-        except IOError:
-           retText = ('Could not read file: '%(fName))
-        return retText
-        
     def del_options(self):
         tabs = self.Tabs.get()
         if (tabs == 0):
@@ -111,9 +115,7 @@ class wikiWin(WikiTable):
                    'Defaulting to TAB character'%(tabs))
   
     def head_options(self):
-        self.Headers = self.Headers.get()
-        print('Headers: %s\n'%(self.Headers))
-  
+        self.headerflag = self.Headers.get()
   
     def init_window(self):
         self.root = Tk()
@@ -166,9 +168,13 @@ class wikiWin(WikiTable):
 
     def appMain(self,run = True):
         if (run):
-            self.wikistuff = WikiTable()
-            win = self.init_window()
             print ('run = True')
+            win = self.init_window()
+            
+            #Set OPTIONS  to match options menu.
+            self.del_options() # Set DELIMITER char 
+            self.head_options() # Set HEADER option
+            
             win.mainloop()
         else:
             print ('run = False')
