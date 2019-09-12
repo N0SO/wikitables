@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import sys
 version_major = sys.version_info[0]
-print ('version_major = %s'%(version_major))
-if (version_major == '2'):
+if (version_major == 2):
     from Tkinter import *
     from tkMessageBox import *
     from tkFileDialog   import askopenfilename
